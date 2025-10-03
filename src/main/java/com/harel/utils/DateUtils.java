@@ -13,7 +13,7 @@ public class DateUtils {
      * @return מחרוזת התאריך בפורמט "yyyy-MM-dd"
      */
     public static String getDateFromToday(int daysAhead) {
-        LocalDate date = LocalDate.now().plusDays(daysAhead);
+        LocalDate date = LocalDate.now().plusDays(daysAhead-1);
         return date.format(formatter);
     }
 

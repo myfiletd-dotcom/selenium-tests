@@ -10,11 +10,11 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -58,83 +58,100 @@ public class ElementUtils {
         }
     }
 
-    public void clickElement(By locator, int seconds){
-        this.clickElementWithScroll(locator,seconds,0);
+    public void clickElement(By locator, int seconds) {
+        this.clickElementWithScroll(locator, seconds, 1);
     }
 
     /**
- * מחכה שהאלמנט יהיה לחיץ ומבצעת עליו לחיצה,
- * עם לוג וגלילה אוטומטית אם האלמנט לא נראה על המסך.
- */
-public void clickElementWithScroll(By locator, int seconds, int maxScrolls) {
-    int scrolls = 0;
-    boolean clicked = false;
+     * מחכה שהאלמנט יהיה לחיץ ומבצעת עליו לחיצה,
+     * עם לוג וגלילה אוטומטית אם האלמנט לא נראה על המסך.
+     */
+    public void clickElementWithScroll(By locator, int seconds, int maxScrolls) {
+        int scrolls = 0;
+        boolean clicked = false;
 
-    while (scrolls < maxScrolls) {
-        try {
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(seconds));
-            WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+        while (scrolls < maxScrolls) {
+            try {
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(seconds));
+                WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
 
-            // בדיקה אם האלמנט נראה על המסך
-            if (element.isDisplayed() && element.isEnabled()) {
-                // נגלול עד לאלמנט ונעביר אליו את הפוקוס
-                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
-                new Actions(driver).moveToElement(element).perform();
+                // בדיקה אם האלמנט נראה על המסך
+                if (element.isDisplayed() && element.isEnabled()) {
+                    // נגלול עד לאלמנט ונעביר אליו את הפוקוס
+                    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+                    new Actions(driver).moveToElement(element).perform();
 
-                // לחיצה
-                element.click();
-                log.info(" לחיצה בוצעה בהצלחה על האלמנט {}", locator);
-                clicked = true;
-                break;
-            } else {
-                // גלילה קטנה למטה אם האלמנט קיים אבל לא נראה
+                    // לחיצה
+                    element.click();
+                    log.info(" לחיצה בוצעה בהצלחה על האלמנט {}", locator);
+                    clicked = true;
+                    break;
+                } else {
+                    // גלילה קטנה למטה אם האלמנט קיים אבל לא נראה
+                    ((JavascriptExecutor) driver).executeScript("window.scrollBy(0, 300);");
+                    Thread.sleep(500); // המתנה קצרה כדי שהדף יתעדכן
+                }
+
+            } catch (NoSuchElementException | TimeoutException e) {
+                // אם האלמנט לא נמצא עדיין, גלילה קטנה למטה
                 ((JavascriptExecutor) driver).executeScript("window.scrollBy(0, 300);");
-                Thread.sleep(500); // המתנה קצרה כדי שהדף יתעדכן
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                    ie.printStackTrace();
+                }
+            } catch (Exception e) {
+                log.error(" לא הצלחנו ללחוץ על האלמנט {}", locator, e);
+                throw new RuntimeException("Cannot click element: " + locator, e);
             }
-
-        } catch (NoSuchElementException | TimeoutException e) {
-            // אם האלמנט לא נמצא עדיין, גלילה קטנה למטה
-            ((JavascriptExecutor) driver).executeScript("window.scrollBy(0, 300);");
-            try { Thread.sleep(500); } catch (InterruptedException ie) { ie.printStackTrace(); }
-        } catch (Exception e) {
-            log.error(" לא הצלחנו ללחוץ על האלמנט {}", locator, e);
-            throw new RuntimeException("Cannot click element: " + locator, e);
+            scrolls++;
         }
-        scrolls++;
+
+        if (!clicked) {
+            throw new RuntimeException("לא הצלחנו ללחוץ על האלמנט " + locator + " לאחר " + maxScrolls + " גלילות");
+        }
     }
 
-    if (!clicked) {
-        throw new RuntimeException("לא הצלחנו ללחוץ על האלמנט " + locator + " לאחר " + maxScrolls + " גלילות");
+ public void selectReturnDate(String returnDateStr) {
+   DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    LocalDate returnDate = LocalDate.parse(returnDateStr, formatter);
+
+    By nextButton = By.cssSelector("button[aria-label='לעבור לחודש הבא']");
+    By monthTitle = By.cssSelector(".MuiPickersCalendarHeader-transitionContainer p");
+    By dayButton = By.cssSelector("button[data-hrl-bo='" + returnDate + "']");
+
+    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+    // ניתוב לחודש הנכון
+    while (true) {
+        String currentMonth = wait.until(ExpectedConditions.visibilityOfElementLocated(monthTitle)).getText();
+
+        // בדיקת התאמה לחודש
+        if (currentMonth.equals(returnDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", new Locale("he"))))) {
+            break;
+        }
+
+        // גלילה + המתנה שהכפתור לא יהיה disabled
+        WebElement next = wait.until(ExpectedConditions.presenceOfElementLocated(nextButton));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", next);
+        wait.until(ExpectedConditions.attributeToBe(next, "aria-disabled", "false"));
+
+        try {
+            next.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", next);
+        }
     }
+
+    // בחירת יום
+    WebElement day = wait.until(ExpectedConditions.elementToBeClickable(dayButton));
+    ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", day);
+    day.click();
+
+    log.info("תאריך החזרה נבחר בהצלחה: " + returnDate);
 }
 
 
-    /**
-     * בוחרת תאריך חזרה בלוח השנה
-     */
-    public void selectReturnDate(String returnDateStr) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate returnDate = LocalDate.parse(returnDateStr, formatter);
-
-        int day = returnDate.getDayOfMonth();
-        String monthHeb = MONTHS_HEB.get(returnDate.getMonth().name()) + " " + returnDate.getYear();
-
-        while (true) {
-            WebElement currentMonthElem = driver.findElement(By.cssSelector(".calendar-header .month"));
-            String currentMonth = currentMonthElem.getText();
-
-            if (currentMonth.equalsIgnoreCase(monthHeb)) {
-                break;
-            } else {
-                WebElement nextButton = driver.findElement(By.cssSelector(".calendar-next"));
-                nextButton.click();
-                log.info("לחצנו על החץ הבא בלוח השנה כדי להגיע לחודש {}", monthHeb);
-            }
-        }
-        WebElement dayElem = driver.findElement(By.xpath("//td[@data-day='" + day + "']"));
-        dayElem.click();
-        log.info("בחרנו את היום {}", day);
-    }
 
     /**
      * שולף טקסט אם האלמנט קיים ומוצג.
@@ -166,4 +183,5 @@ public void clickElementWithScroll(By locator, int seconds, int maxScrolls) {
     public String getTextIfVisible(By locator) {
         return getTextIfVisible(locator, 0);
     }
+
 }

@@ -39,29 +39,29 @@ public class TravelPolicyTest {
         elementUtils.clickElement(By.cssSelector("div.jss11 > button"), 5);
 
         // Select destination
-        elementUtils.clickElementWithScroll(By.xpath("//div[@class='jss180']//div[@data-hrl-bo='asia']"), 5,3);
+        elementUtils.clickElementWithScroll(By.xpath("//div[@class='jss174 jss176']//div[text()='אסיה']"), 5, 3);
 
         // Continue to the next level
-        elementUtils.clickElementWithScroll(By.cssSelector("[data-hrl-bo='wizard-next-button']"), 5,3);
+        elementUtils.clickElementWithScroll(By.cssSelector("[data-hrl-bo='wizard-next-button']"), 5, 3);
 
-        // בוחרים תאריך יציאה (היום)
+        // Select exit date (today)
         String todayString = DateUtils.getTodayDate();
         elementUtils.clickElement(By.cssSelector("button[data-hrl-bo='" + todayString + "']"), 5);
 
-        // בוחרים תאריך חזרה (עוד 30 יום)
+        // Select return date
         int expectedDays = 30;
         String returnDate = DateUtils.getDateFromToday(expectedDays);
         elementUtils.selectReturnDate(returnDate);
 
-        // אימות מספר הימים
+        // Assert total days
         String totalDaysStr = elementUtils.getTextIfVisible(By.cssSelector("[data-hrl-bo='total-days']"), 5);
         int actualDays = StringUtils.getDaysFromString(totalDaysStr);
         Assert.assertEquals(actualDays, expectedDays, "מספר הימים לא תואם");
 
-        // מעבר למסך הבא
+        // Go to next screen
         elementUtils.clickElement(By.id("nextButton"), 5);
 
-        // וידוא שהעמוד החדש עלה
+        // Next screen has appeared
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         WebElement newPageElement = wait.until(
                 ExpectedConditions
