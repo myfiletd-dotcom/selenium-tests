@@ -1,0 +1,78 @@
+package com.harel;
+
+import java.time.Duration;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.harel.utils.StringUtils;
+import com.harel.utils.DateUtils;
+import com.harel.utils.ElementUtils;
+
+public class TravelPolicyTest {
+
+    private WebDriver driver;
+    private ElementUtils elementUtils;
+
+    @BeforeClass
+    public void setUp() {
+        System.setProperty("webdriver.chrome.driver", "C:\\drivers\\chromedriver\\chromedriver.exe");
+        driver = new ChromeDriver();
+        elementUtils = new ElementUtils(driver);
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
+        driver.manage().window().maximize();
+        driver.get("https://digital.harel-group.co.il/travel-policy");
+    }
+
+    @Test
+    public void travelInsuranceFirstTimeTest() {
+        // Buy Travel Insurance First Time button
+        elementUtils.clickElement(By.cssSelector("div.jss11 > button"), 5);
+
+        // Select destination
+        elementUtils.clickElement(By.xpath("//div[@class='jss180']//div[@data-hrl-bo='asia']"), 5);
+
+        // Continue to the next level
+        elementUtils.clickElement(By.cssSelector("[data-hrl-bo='wizard-next-button']"), 5);
+
+        // בוחרים תאריך יציאה (היום)
+        String todayString = DateUtils.getTodayDate();
+        elementUtils.clickElement(By.cssSelector("button[data-hrl-bo='" + todayString + "']"), 5);
+
+        // בוחרים תאריך חזרה (עוד 30 יום)
+        int expectedDays = 30;
+        String returnDate = DateUtils.getDateFromToday(expectedDays);
+        elementUtils.selectReturnDate(returnDate);
+
+        // אימות מספר הימים
+        String totalDaysStr = elementUtils.getTextIfVisible(By.cssSelector("[data-hrl-bo='total-days']"), 5);
+        int actualDays = StringUtils.getDaysFromString(totalDaysStr);
+        Assert.assertEquals(actualDays, expectedDays, "מספר הימים לא תואם");
+
+        // מעבר למסך הבא
+        elementUtils.clickElement(By.id("nextButton"), 5);
+
+        // וידוא שהעמוד החדש עלה
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebElement newPageElement = wait.until(
+                ExpectedConditions
+                        .visibilityOfElementLocated(By.cssSelector("[data-hrl-bo='traveler-card-contact-person']")));
+        Assert.assertTrue(newPageElement.isDisplayed(), "העמוד החדש לא נטען!");
+    }
+
+    @AfterClass
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+}
