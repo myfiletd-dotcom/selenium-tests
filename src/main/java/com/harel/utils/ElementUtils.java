@@ -7,6 +7,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
+
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -55,27 +58,56 @@ public class ElementUtils {
         }
     }
 
+    public void clickElement(By locator, int seconds){
+        this.clickElementWithScroll(locator,seconds,0);
+    }
+
     /**
-     * מחכה שהאלמנט יהיה לחיץ ומבצעת עליו לחיצה, עם לוג.
-     */
-    public void clickElement(By locator, int seconds) {
+ * מחכה שהאלמנט יהיה לחיץ ומבצעת עליו לחיצה,
+ * עם לוג וגלילה אוטומטית אם האלמנט לא נראה על המסך.
+ */
+public void clickElementWithScroll(By locator, int seconds, int maxScrolls) {
+    int scrolls = 0;
+    boolean clicked = false;
+
+    while (scrolls < maxScrolls) {
         try {
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(seconds));
-            WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
+            WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
 
-            // נגלול עד לאלמנט
-            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+            // בדיקה אם האלמנט נראה על המסך
+            if (element.isDisplayed() && element.isEnabled()) {
+                // נגלול עד לאלמנט ונעביר אליו את הפוקוס
+                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+                new Actions(driver).moveToElement(element).perform();
 
-            // נוודא שהאלמנט באמת בפריים ונראה
-            new Actions(driver).moveToElement(element).perform();
-            // click
-            element.click();
-            log.info("✔ לחיצה בוצעה בהצלחה על האלמנט {}", locator);
+                // לחיצה
+                element.click();
+                log.info(" לחיצה בוצעה בהצלחה על האלמנט {}", locator);
+                clicked = true;
+                break;
+            } else {
+                // גלילה קטנה למטה אם האלמנט קיים אבל לא נראה
+                ((JavascriptExecutor) driver).executeScript("window.scrollBy(0, 300);");
+                Thread.sleep(500); // המתנה קצרה כדי שהדף יתעדכן
+            }
+
+        } catch (NoSuchElementException | TimeoutException e) {
+            // אם האלמנט לא נמצא עדיין, גלילה קטנה למטה
+            ((JavascriptExecutor) driver).executeScript("window.scrollBy(0, 300);");
+            try { Thread.sleep(500); } catch (InterruptedException ie) { ie.printStackTrace(); }
         } catch (Exception e) {
-            log.error("❌ לא הצלחנו ללחוץ על האלמנט {}", locator, e);
+            log.error(" לא הצלחנו ללחוץ על האלמנט {}", locator, e);
             throw new RuntimeException("Cannot click element: " + locator, e);
         }
+        scrolls++;
     }
+
+    if (!clicked) {
+        throw new RuntimeException("לא הצלחנו ללחוץ על האלמנט " + locator + " לאחר " + maxScrolls + " גלילות");
+    }
+}
+
 
     /**
      * בוחרת תאריך חזרה בלוח השנה

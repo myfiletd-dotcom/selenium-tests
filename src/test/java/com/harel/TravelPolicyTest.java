@@ -39,10 +39,10 @@ public class TravelPolicyTest {
         elementUtils.clickElement(By.cssSelector("div.jss11 > button"), 5);
 
         // Select destination
-        elementUtils.clickElement(By.xpath("//div[@class='jss180']//div[@data-hrl-bo='asia']"), 5);
+        elementUtils.clickElementWithScroll(By.xpath("//div[@class='jss180']//div[@data-hrl-bo='asia']"), 5,3);
 
         // Continue to the next level
-        elementUtils.clickElement(By.cssSelector("[data-hrl-bo='wizard-next-button']"), 5);
+        elementUtils.clickElementWithScroll(By.cssSelector("[data-hrl-bo='wizard-next-button']"), 5,3);
 
         // בוחרים תאריך יציאה (היום)
         String todayString = DateUtils.getTodayDate();
