@@ -35,7 +35,7 @@ public class TravelPolicyTest {
 
     @Test
     public void travelInsuranceFirstTimeTest() {
-        // Buy Travel Insurance First Time button
+        // Click on buy Travel Insurance First Time button
         elementUtils.clickElement(By.cssSelector("div.jss11 > button"), 5);
 
         // Select destination
@@ -56,7 +56,7 @@ public class TravelPolicyTest {
         // Assert total days
         String totalDaysStr = elementUtils.getTextIfVisible(By.cssSelector("[data-hrl-bo='total-days']"), 5);
         int actualDays = StringUtils.getDaysFromString(totalDaysStr);
-        Assert.assertEquals(actualDays, expectedDays, "מספר הימים לא תואם");
+        Assert.assertEquals(actualDays, expectedDays, "The number of days does'nt match");
 
         // Go to next screen
         elementUtils.clickElement(By.id("nextButton"), 5);
@@ -66,7 +66,7 @@ public class TravelPolicyTest {
         WebElement newPageElement = wait.until(
                 ExpectedConditions
                         .visibilityOfElementLocated(By.cssSelector("[data-hrl-bo='traveler-card-contact-person']")));
-        Assert.assertTrue(newPageElement.isDisplayed(), "העמוד החדש לא נטען!");
+        Assert.assertTrue(newPageElement.isDisplayed(), "The new page did'nt load!");
     }
 
     @AfterClass

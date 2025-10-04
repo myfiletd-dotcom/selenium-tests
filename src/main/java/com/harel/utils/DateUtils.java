@@ -8,9 +8,9 @@ public class DateUtils {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     /**
-     * מחשב תאריך בעוד מספר ימים מהיום.
-     * @param daysAhead מספר ימים מהיום
-     * @return מחרוזת התאריך בפורמט "yyyy-MM-dd"
+     * Calculates a date in a few days from today
+     * @param daysAhead A few days from today
+     * @return  Format date string "yyyy-MM-dd"
      */
     public static String getDateFromToday(int daysAhead) {
         LocalDate date = LocalDate.now().plusDays(daysAhead-1);
